@@ -66,9 +66,9 @@ class MainScreen:
     def cargar_musica(self):
         """Carga y reproduce la música del menú principal"""
         try:
-            pygame.mixer.music.load("OST/Main_Theme.mp3")
-            pygame.mixer.music.set_volume(0.5)  # Volumen al 50%
-            pygame.mixer.music.play(-1)  # -1 para reproducir en loop infinito
+            pygame.mixer.music.load("ASSETS/OST/Main_Theme.mp3")
+            pygame.mixer.music.set_volume(0.5)
+            pygame.mixer.music.play(-1)
         except pygame.error as e:
             print(f"No se pudo cargar la música: {e}")
         
@@ -146,7 +146,7 @@ class MainScreen:
                 if evento.type == pygame.QUIT:
                     self.corriendo = False
                 elif evento.type == pygame.MOUSEBUTTONDOWN:
-                    if evento.button == 1:  # Click izquierdo
+                    if evento.button == 1:
                         self.manejar_click(evento.pos)
                     
             self.dibujar_menu_principal()
