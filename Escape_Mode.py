@@ -4,6 +4,9 @@ from PIL import Image, ImageSequence
 import random
 
 from HUD import PointsBox, TimerBar, EnergyBar
+from Ending_Screen import EndingScreen
+
+
 
 '''Variables Globales'''
 
@@ -26,7 +29,7 @@ class EscapeMode:
 
         # ESTO ES DEL HUD
 
-        self.timer = TimerBar(duracion=60, x=200, y=20)
+        self.timer = TimerBar(duracion=10, x=200, y=20)
         self.points_box = PointsBox(x=20, y=550, width=200, height=40, initial_points=0)
         self.energy_bar = EnergyBar(max_energy=100, x=550, y=550)
 
@@ -120,11 +123,25 @@ class EscapeMode:
             elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
                 self.corriendo = False
 
+
+
+########################
+#WHILE DE EJECUTAR
+
+
+
     def ejecutar(self):
         print("EscapeMode iniciando...")
         self.mapa = self.generar_mapa()
 
         while self.corriendo:
+
+            if self.timer.is_finished():
+
+                end = EndingScreen(self.ventana, self.nombre_jugador, self.points_box.points)
+                end.run()
+                self.corriendo = False
+
             dt = self.reloj.get_time() / 1000  # segundos
 
             self.manejar_eventos()
