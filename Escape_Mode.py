@@ -3,6 +3,8 @@ import sys
 from PIL import Image, ImageSequence
 import random
 
+from HUD import PointsBox, TimerBar, EnergyBar
+
 '''Variables Globales'''
 
 ANCHO_VENTANA = 800
@@ -21,7 +23,14 @@ MARGEN_Y = (ALTO_VENTANA - (MAP_ROWS * TILE)) // 2
 
 class EscapeMode:
     def __init__(self, ventana, nombre_jugador):
+
+        # ESTO ES DEL HUD
+
+        self.timer = TimerBar(duracion=60, x=200, y=20)
+        self.points_box = PointsBox(x=20, y=550, width=200, height=40, initial_points=0)
+        self.energy_bar = EnergyBar(max_energy=100, x=650, y=550)
         print("Entrando a Escape Mode...")
+
         self.ventana = ventana
         self.nombre_jugador = nombre_jugador
         self.reloj = pygame.time.Clock()
@@ -33,6 +42,8 @@ class EscapeMode:
         
         # Cargar sprites
         self.cargar_sprites()
+
+    ###############################
 
     def cargar_gif(self, ruta):
         frames = []
@@ -53,6 +64,7 @@ class EscapeMode:
             frames.append(frame_negro)
         return frames
     
+
     def cargar_sprites(self):
         """Carga los sprites de los elementos del mapa"""
         self.sprites = {}
@@ -93,7 +105,8 @@ class EscapeMode:
             self.frame_index = (self.frame_index + 1) % len(self.frames)
         else:
             self.ventana.fill((0, 0, 0))
-
+        self.timer.draw(self.ventana)
+        self.points_box.draw(self.ventana)
         self.dibujar_mapa()
         pygame.display.flip()
 
@@ -110,9 +123,25 @@ class EscapeMode:
         self.mapa = self.generar_mapa()
 
         while self.corriendo:
+            dt = self.reloj.get_time() / 1000  # segundos
+
             self.manejar_eventos()
             self.dibujar()
+
+            keys = pygame.key.get_pressed()
+            running = keys[pygame.K_LSHIFT]
+
+            if running:
+                self.energy_bar.drain(dt)  # gastar energía
+            else:
+                self.energy_bar.recover(dt)  # regenerar
+
+            self.timer.draw(self.ventana)
+            self.energy_bar.draw(self.ventana)
+            pygame.display.flip()
             self.reloj.tick(FPS)
+
+
 
     ##############GENERACIÓN DEL MAPA:
 
