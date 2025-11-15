@@ -71,7 +71,7 @@ class PointsBox:
 ############### ESTA ES LA BARRA DE ENERGIA #######################
 
 class EnergyBar:
-    def __init__(self, max_energy, x, y, width=300, height=25):
+    def __init__(self, max_energy, x, y, width=200, height=15):
         self.max_energy = max_energy
         self.energy = max_energy
         
@@ -81,9 +81,7 @@ class EnergyBar:
         self.height = height
 
         # Colores
-        self.GREEN = (0, 255, 0)
         self.YELLOW = (255, 255, 0)
-        self.RED = (255, 0, 0)
         self.WHITE = (255, 255, 255)
 
         # Velocidades
@@ -103,11 +101,11 @@ class EnergyBar:
         width_actual = int(self.width * porcentaje)
 
         if porcentaje > 0.5:
-            color = self.GREEN
+            color = self.WHITE
         elif porcentaje > 0.2:
             color = self.YELLOW
         else:
-            color = self.RED
+            color = self.YELLOW
 
         pygame.draw.rect(pantalla, self.WHITE, (self.x, self.y, self.width, self.height), 3)
         pygame.draw.rect(pantalla, color, (self.x, self.y, width_actual, self.height))
