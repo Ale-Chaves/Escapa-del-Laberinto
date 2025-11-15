@@ -28,7 +28,8 @@ class EscapeMode:
 
         self.timer = TimerBar(duracion=60, x=200, y=20)
         self.points_box = PointsBox(x=20, y=550, width=200, height=40, initial_points=0)
-        self.energy_bar = EnergyBar(max_energy=100, x=650, y=550)
+        self.energy_bar = EnergyBar(max_energy=100, x=550, y=550)
+
         print("Entrando a Escape Mode...")
 
         self.ventana = ventana
@@ -105,6 +106,7 @@ class EscapeMode:
             self.frame_index = (self.frame_index + 1) % len(self.frames)
         else:
             self.ventana.fill((0, 0, 0))
+        self.energy_bar.draw(self.ventana)
         self.timer.draw(self.ventana)
         self.points_box.draw(self.ventana)
         self.dibujar_mapa()
@@ -136,8 +138,6 @@ class EscapeMode:
             else:
                 self.energy_bar.recover(dt)  # regenerar
 
-            self.timer.draw(self.ventana)
-            self.energy_bar.draw(self.ventana)
             pygame.display.flip()
             self.reloj.tick(FPS)
 
