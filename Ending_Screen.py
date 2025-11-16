@@ -6,42 +6,53 @@ ANCHO_VENTANA = 800
 ALTO_VENTANA = 600
 
 class EndingScreen:
-    def __init__(self, ventana, nombre_jugador, puntaje):
+    def __init__(self, ventana, nombre_jugador, puntaje, modo):
         self.ventana = ventana
         self.player_name = nombre_jugador
         self.player_score = puntaje
+        self.modo = modo
 
         self.font_big = pygame.font.Font(None, 70)
         self.font_med = pygame.font.Font(None, 40)
         self.font_small = pygame.font.Font(None, 30)
 
-        self.scores_file = "scores_escape.json"
+        # ARCHIVO CORRECTO SEGÚN EL MODO
+        self.archivo = f"scores_{modo}.json"
+
         self.scores = self.cargar_scores()
         self.actualizar_scores()
 
     def cargar_scores(self):
-        if not os.path.exists(self.scores_file):
+        if not os.path.exists(self.archivo):
             return []
 
-        with open(self.scores_file, "r") as f:
+        with open(self.archivo, "r") as f:
             try:
                 return json.load(f)
             except:
                 return []
 
     def actualizar_scores(self):
-        # Agregar puntaje del jugador
-        self.scores.append({"name": self.player_name, "score": self.player_score})
+        # Si el archivo no existe, inicializa una lista vacía
+        if os.path.exists(self.archivo):
+            with open(self.archivo, "r") as f:
+                data = json.load(f)
+        else:
+            data = []
 
-        # Ordenar de mayor a menor
-        self.scores = sorted(self.scores, key=lambda x: x["score"], reverse=True)
+        # Agregar el puntaje actual
+        data.append({"name": self.player_name, "score": self.player_score})
 
-        # Solo mantener Top 5
-        self.scores = self.scores[:5]
+        # Ordenar y conservar solo top 5
+        data = sorted(data, key=lambda x: x["score"], reverse=True)[:5]
 
         # Guardar
-        with open(self.scores_file, "w") as f:
-            json.dump(self.scores, f, indent=4)
+        with open(self.archivo, "w") as f:
+            json.dump(data, f, indent=4)
+
+        # Actualizar la lista interna
+        self.scores = data
+
 
     def run(self):
         corriendo = True
@@ -67,7 +78,7 @@ class EndingScreen:
         score_text = self.font_med.render(f"Puntaje: {self.player_score}", True, (255, 255, 0))
         self.ventana.blit(score_text, (ANCHO_VENTANA//2 - score_text.get_width()//2, 120))
 
-        top_title = self.font_med.render("TOP 5 - MODO ESCAPA", True, (0, 255, 255))
+        top_title = self.font_med.render(f"TOP 5 - MODO {self.modo.upper()}", True, (0, 255, 255))
         self.ventana.blit(top_title, (ANCHO_VENTANA//2 - top_title.get_width()//2, 200))
 
         # Mostrar Top 5
