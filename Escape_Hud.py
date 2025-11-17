@@ -8,20 +8,32 @@ class TimerBar:
         self.y = y
         self.width = width
         self.height = height
-        self.inicio = time.time()
+        self.inicio = None  # MODIFICADO: Inicia en None (no empieza a contar)
+        self.iniciado = False  # NUEVO: Flag para saber si ya empezó
 
         self.VERDE = (0, 255, 0)
         self.AMARILLO = (255, 255, 0)
         self.ROJO = (255, 0, 0)
         self.BLANCO = (255, 255, 255)
 
+    def start(self):
+        """NUEVO: Inicia el conteo del timer"""
+        if not self.iniciado:
+            self.inicio = time.time()
+            self.iniciado = True
+
     def reset(self):
         self.inicio = time.time()
+        self.iniciado = True
 
     def get_remaining_time(self):
+        if not self.iniciado or self.inicio is None:
+            return self.duracion  # Si no ha iniciado, retorna el tiempo completo
         return max(self.duracion - (time.time() - self.inicio), 0)
 
     def is_finished(self):
+        if not self.iniciado:
+            return False  # Si no ha iniciado, no puede estar terminado
         return self.get_remaining_time() <= 0
 
     def draw(self, pantalla):

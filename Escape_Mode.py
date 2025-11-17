@@ -5,6 +5,11 @@ import random
 
 from Escape_Hud import PointsBox, TimerBar, EnergyBar
 from Ending_Screen import EndingScreen
+from Player import Player
+from Enemy import Enemy
+from Trap import TrapManager
+import Music_Manager  # NUEVO
+from Countdown import Countdown  # NUEVO
 
 
 '''Variables Globales'''
@@ -24,11 +29,11 @@ MARGEN_Y = (ALTO_VENTANA - (MAP_ROWS * TILE)) // 2
 
 
 class EscapeMode:
-    def __init__(self, ventana, nombre_jugador):
+    def __init__(self, ventana, nombre_jugador, num_enemigos=2, velocidad_enemigos=1.0):
 
         # ESTO ES DEL HUD
 
-        self.timer = TimerBar(duracion=5, x=200, y=20)
+        self.timer = TimerBar(duracion=120, x=200, y=20)  # 2 minutos
         self.points_box = PointsBox(x=20, y=550, width=200, height=40, initial_points=0)
         self.energy_bar = EnergyBar(max_energy=100, x=550, y=550)
 
@@ -45,6 +50,21 @@ class EscapeMode:
         
         # Cargar sprites
         self.cargar_sprites()
+        
+        # Jugador (se creará después de generar el mapa)
+        self.jugador = None
+        
+        # Enemigos - Configuración de dificultad
+        self.enemigos = []
+        self.num_enemigos = num_enemigos
+        self.velocidad_enemigos = velocidad_enemigos
+        
+        # NUEVO: Sistema de trampas
+        self.trap_manager = TrapManager(max_trampas=3, cooldown=5.0)
+        self.puntos_por_enemigo_trampa = 50  # Bonus por eliminar enemigo con trampa
+        
+        # NUEVO: Cuenta regresiva
+        self.countdown = Countdown(ventana, ANCHO_VENTANA, ALTO_VENTANA)
 
     ###############################
 
@@ -108,10 +128,26 @@ class EscapeMode:
             self.frame_index = (self.frame_index + 1) % len(self.frames)
         else:
             self.ventana.fill((0, 0, 0))
+        
+        # Dibujar mapa
+        self.dibujar_mapa()
+        
+        # NUEVO: Dibujar trampas (antes de enemigos para que estén debajo)
+        self.trap_manager.dibujar(self.ventana, MARGEN_X, MARGEN_Y)
+        
+        # Dibujar enemigos (antes del jugador para que el jugador esté encima)
+        for enemigo in self.enemigos:
+            enemigo.dibujar(self.ventana, MARGEN_X, MARGEN_Y)
+        
+        # Dibujar jugador
+        if self.jugador:
+            self.jugador.dibujar(self.ventana, MARGEN_X, MARGEN_Y)
+        
+        # Dibujar HUD
         self.energy_bar.draw(self.ventana)
         self.timer.draw(self.ventana)
         self.points_box.draw(self.ventana)
-        self.dibujar_mapa()
+        
         pygame.display.flip()
 
     def manejar_eventos(self):
@@ -121,6 +157,30 @@ class EscapeMode:
                 sys.exit()
             elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
                 self.corriendo = False
+            # NUEVO: Colocar trampa con ESPACIO
+            elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
+                # Intentar colocar trampa en la posición actual del jugador
+                if self.jugador:
+                    tiempo_actual = pygame.time.get_ticks() / 1000
+                    jugador_pos = self.jugador.get_posicion()
+                    
+                    # Verificar que sea una casilla válida (P, L o T)
+                    if self.mapa[jugador_pos[0]][jugador_pos[1]] in ["P", "L", "T"]:
+                        if self.trap_manager.colocar_trampa(
+                            jugador_pos[0], 
+                            jugador_pos[1], 
+                            TILE, 
+                            tiempo_actual
+                        ):
+                            print(f"¡Trampa colocada en {jugador_pos}!")
+                        else:
+                            cooldown_restante = self.trap_manager.get_cooldown_restante(tiempo_actual)
+                            trampas_activas = self.trap_manager.get_trampas_activas()
+                            
+                            if cooldown_restante > 0:
+                                print(f"Cooldown: espera {cooldown_restante:.1f}s")
+                            elif trampas_activas >= 3:
+                                print("Ya tienes 3 trampas activas")
 
 
 
@@ -132,32 +192,160 @@ class EscapeMode:
     def ejecutar(self):
         print("EscapeMode iniciando...")
         self.mapa = self.generar_mapa()
+        
+        # Crear jugador después de generar el mapa
+        self.jugador = Player(self.inicio[0], self.inicio[1], TILE, modo="escape")
+        
+        # Crear enemigos en posiciones aleatorias
+        self.crear_enemigos()
+        
+        # NUEVO: Mostrar cuenta regresiva antes de empezar
+        if not self.countdown.ejecutar(self.dibujar):
+            # Si se canceló la cuenta regresiva, volver al menú
+            return False
+        
+        # NUEVO: Iniciar el timer DESPUÉS de la cuenta regresiva
+        self.timer.start()
+        
+        # NUEVO: Iniciar música del modo
+        Music_Manager.reproducir_musica("ASSETS/OST/Escape_Mode.mp3")
 
         while self.corriendo:
-
+            # Verificar si el timer terminó
             if self.timer.is_finished():
-
+                # NUEVO: Detener música del modo
+                Music_Manager.detener_musica()
+                
                 end = EndingScreen(self.ventana, self.nombre_jugador, self.points_box.points, "escape")
-                end.run()
+                volver_al_menu = end.run()
                 self.corriendo = False
+                return volver_al_menu
+            
+            # Verificar si el jugador llegó a la salida
+            if self.jugador.llego_a_salida:
+                # Calcular puntos bonus por tiempo restante
+                tiempo_restante = self.timer.get_remaining_time()
+                puntos_bonus = int(tiempo_restante * 10)  # 10 puntos por segundo
+                self.points_box.add_points(puntos_bonus)
+                
+                # NUEVO: Detener música del modo
+                Music_Manager.detener_musica()
+                
+                # Mostrar pantalla de victoria
+                end = EndingScreen(self.ventana, self.nombre_jugador, self.points_box.points, "escape")
+                volver_al_menu = end.run()
+                self.corriendo = False
+                return volver_al_menu
+            
+            # Verificar colisiones con enemigos
+            jugador_pos = self.jugador.get_posicion()
+            for enemigo in self.enemigos:
+                if enemigo.colisiona_con_jugador(jugador_pos):
+                    # Game Over - El jugador fue atrapado
+                    print("¡Te atraparon!")
+                    
+                    # NUEVO: Reproducir sonido de eliminación
+                    Music_Manager.reproducir_efecto("Eliminated")
+                    
+                    # NUEVO: Detener música del modo
+                    Music_Manager.detener_musica()
+                    
+                    end = EndingScreen(self.ventana, self.nombre_jugador, self.points_box.points, "escape")
+                    volver_al_menu = end.run()
+                    self.corriendo = False
+                    return volver_al_menu
 
-            dt = self.reloj.get_time() / 1000  # segundos
+            dt = self.reloj.get_time() / 1000
+            tiempo_actual = pygame.time.get_ticks() / 1000
 
             self.manejar_eventos()
-            self.dibujar()
-
-            keys = pygame.key.get_pressed()
-            running = keys[pygame.K_LSHIFT]
-
-            if running:
-                self.energy_bar.drain(dt)  # gastar energía
+            
+            # Actualizar jugador
+            teclas = pygame.key.get_pressed()
+            self.jugador.mover(teclas, self.mapa, self.energy_bar)
+            
+            # Actualizar enemigos
+            for enemigo in self.enemigos:
+                enemigo.actualizar(jugador_pos, self.mapa, tiempo_actual)
+            
+            # NUEVO: Actualizar trampas
+            self.trap_manager.actualizar()
+            
+            # NUEVO: Verificar colisiones trampa-enemigo
+            enemigos_eliminados = self.trap_manager.verificar_colisiones(
+                self.enemigos, 
+                tiempo_actual
+            )
+            
+            # NUEVO: Dar puntos por enemigos eliminados
+            if enemigos_eliminados > 0:
+                puntos_ganados = enemigos_eliminados * self.puntos_por_enemigo_trampa
+                self.points_box.add_points(puntos_ganados)
+                # NUEVO: Reproducir sonido de eliminación
+                Music_Manager.reproducir_efecto("Eliminated")
+                print(f"¡{enemigos_eliminados} enemigo(s) eliminado(s)! +{puntos_ganados} puntos")
+            
+            # NUEVO: Reaparición de enemigos muertos
+            for enemigo in self.enemigos:
+                if not enemigo.vivo and enemigo.puede_reaparecer(tiempo_actual):
+                    # Buscar posición aleatoria válida para reaparecer
+                    intentos = 0
+                    while intentos < 50:
+                        fila = random.randint(2, MAP_ROWS - 3)
+                        col = random.randint(2, MAP_COLS - 3)
+                        
+                        # Verificar que sea camino y esté lejos del jugador
+                        if (self.mapa[fila][col] in ["P", "L", "T"] and
+                            abs(fila - jugador_pos[0]) + abs(col - jugador_pos[1]) >= 5):
+                            enemigo.reaparecer(fila, col)
+                            break
+                        
+                        intentos += 1
+            
+            # Manejar energía
+            if self.jugador.corriendo:
+                self.energy_bar.drain(dt)
             else:
-                self.energy_bar.recover(dt)  # regenerar
-
-            pygame.display.flip()
+                self.energy_bar.recover(dt)
+            
+            self.dibujar()
             self.reloj.tick(FPS)
+        
+        # Detener música al salir (por si acaso)
+        Music_Manager.detener_musica()
+        return False
 
     ##############GENERACIÓN DEL MAPA:
+    
+    def crear_enemigos(self):
+        """Crea los enemigos en posiciones aleatorias del mapa"""
+        intentos = 0
+        max_intentos = 100
+        
+        # Calcular frames_por_movimiento basado en la velocidad
+        # velocidad 1.0 = 8 frames, 1.5 = ~5 frames, 2.0 = 4 frames
+        frames_por_movimiento = int(8 / self.velocidad_enemigos)
+        
+        while len(self.enemigos) < self.num_enemigos and intentos < max_intentos:
+            intentos += 1
+            
+            # Posición aleatoria
+            fila = random.randint(2, MAP_ROWS - 3)
+            col = random.randint(2, MAP_COLS - 3)
+            
+            # Verificar que:
+            # 1. Sea una casilla de camino
+            # 2. No esté muy cerca del jugador (al menos 5 casillas)
+            # 3. No esté en la salida
+            if (self.mapa[fila][col] == "P" and
+                abs(fila - self.inicio[0]) + abs(col - self.inicio[1]) >= 5 and
+                (fila, col) != self.salida):
+                
+                enemigo = Enemy(fila, col, TILE, modo="escape")
+                enemigo.frames_por_movimiento = frames_por_movimiento  # Aplicar velocidad
+                self.enemigos.append(enemigo)
+        
+        print(f"Enemigos creados: {len(self.enemigos)} con velocidad {self.velocidad_enemigos}x")
 
     def generar_mapa(self):
         """Genera un laberinto aleatorio con bordes de muros"""

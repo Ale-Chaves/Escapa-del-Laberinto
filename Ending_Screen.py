@@ -1,6 +1,7 @@
 import pygame
 import json
 import os
+import Music_Manager  # NUEVO
 
 ANCHO_VENTANA = 800
 ALTO_VENTANA = 600
@@ -11,6 +12,7 @@ class EndingScreen:
         self.player_name = nombre_jugador
         self.player_score = puntaje
         self.modo = modo
+        self.volver_al_menu = False
 
         self.font_big = pygame.font.Font(None, 70)
         self.font_med = pygame.font.Font(None, 40)
@@ -21,6 +23,21 @@ class EndingScreen:
 
         self.scores = self.cargar_scores()
         self.actualizar_scores()
+        
+        # NUEVO: Reproducir música de ending al entrar (solo una vez, no loop)
+        try:
+            pygame.mixer.music.load("ASSETS/OST/Ending.mp3")
+            
+            # Cargar configuración de volumen
+            if os.path.exists("settings.json"):
+                with open("settings.json", "r") as f:
+                    settings = json.load(f)
+                    if settings.get("musica_activada", True):
+                        volumen = settings.get("volumen_musica", 5) / 10
+                        pygame.mixer.music.set_volume(volumen)
+                        pygame.mixer.music.play(0)  # 0 = reproducir solo una vez (no loop)
+        except Exception as e:
+            print(f"Error al cargar música de ending: {e}")
 
     def cargar_scores(self):
         if not os.path.exists(self.archivo):
@@ -53,19 +70,26 @@ class EndingScreen:
         # Actualizar la lista interna
         self.scores = data
 
-
     def run(self):
         corriendo = True
         while corriendo:
             for evento in pygame.event.get():
                 if evento.type == pygame.QUIT:
-                    corriendo = False
+                    pygame.quit()
+                    import sys
+                    sys.exit()
                 elif evento.type == pygame.KEYDOWN:
                     if evento.key == pygame.K_RETURN or evento.key == pygame.K_ESCAPE:
+                        self.volver_al_menu = True
                         corriendo = False
 
             self.dibujar()
             pygame.display.flip()
+        
+        # NUEVO: Detener música al salir
+        Music_Manager.detener_musica()
+        
+        return self.volver_al_menu
 
     def dibujar(self):
         self.ventana.fill((0, 0, 0))
@@ -91,5 +115,5 @@ class EndingScreen:
             y += 40
 
         # Instrucción
-        texto = self.font_small.render("Presiona ENTER para continuar...", True, (200, 200, 200))
+        texto = self.font_small.render("Presiona ENTER para volver al menú principal...", True, (200, 200, 200))
         self.ventana.blit(texto, (ANCHO_VENTANA//2 - texto.get_width()//2, 520))
