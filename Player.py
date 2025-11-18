@@ -3,15 +3,6 @@ import os
 
 class Player:
     def __init__(self, fila_inicio, col_inicio, tile_size, modo="escape"):
-        """
-        Inicializa el jugador
-        
-        Args:
-            fila_inicio: Fila inicial en el mapa
-            col_inicio: Columna inicial en el mapa
-            tile_size: Tamaño de cada casilla (25px)
-            modo: "escape" o "hunter" para determinar sprites
-        """
         self.fila = fila_inicio
         self.col = col_inicio
         self.tile_size = tile_size
@@ -21,22 +12,22 @@ class Player:
         self.rol = "Runner" if modo == "escape" else "Hunter"
         
         # Velocidad
-        self.velocidad_normal = 1  # Casillas por movimiento
-        self.velocidad_sprint = 2  # Casillas cuando corre
+        self.velocidad_normal = 1
+        self.velocidad_sprint = 2
         self.corriendo = False
         
         # Sistema de cooldown para balancear velocidad
         self.contador_movimiento = 0
-        self.frames_movimiento_normal = 6  # Frames entre movimientos (velocidad normal)
-        self.frames_movimiento_sprint = 3  # Frames entre movimientos (sprint)
+        self.frames_movimiento_normal = 6
+        self.frames_movimiento_sprint = 3
         
         # Dirección actual
-        self.direccion = "Down"  # Up, Down, Left, Right
+        self.direccion = "Down"
         
         # Sistema de animación
-        self.frame_actual = 2  # Empezar en pose firme (idle)
-        self.secuencia_animacion = [1, 2, 3, 2]  # Secuencia de animación
-        self.indice_secuencia = 1  # Empezar en 2 (firme)
+        self.frame_actual = 2
+        self.secuencia_animacion = [1, 2, 3, 2]
+        self.indice_secuencia = 1
         
         # Posición anterior para detectar cambios
         self.fila_anterior = fila_inicio
@@ -80,14 +71,6 @@ class Player:
         return superficie
     
     def mover(self, teclas, mapa, energy_bar):
-        """
-        Maneja el movimiento del jugador
-        
-        Args:
-            teclas: pygame.key.get_pressed()
-            mapa: Matriz del mapa
-            energy_bar: Referencia a la barra de energía
-        """
         # Determinar si está corriendo (Shift presionado y tiene energía)
         self.corriendo = (teclas[pygame.K_LSHIFT] and energy_bar.energy > 0)
         
@@ -99,7 +82,7 @@ class Player:
         
         # Solo permitir movimiento cuando el contador alcance el límite
         if self.contador_movimiento < frames_requeridos:
-            return  # No moverse aún
+            return
         
         # Resetear contador
         self.contador_movimiento = 0
@@ -133,7 +116,7 @@ class Player:
             if self.puede_moverse(nueva_fila, nueva_col, mapa):
                 # Detectar si realmente se movió a una nueva casilla
                 if nueva_fila != self.fila or nueva_col != self.col:
-                    self.actualizar_animacion()  # Cambiar sprite al moverse
+                    self.actualizar_animacion()
                     
                 self.fila = nueva_fila
                 self.col = nueva_col
@@ -147,26 +130,11 @@ class Player:
             self.indice_secuencia = 1
     
     def puede_moverse(self, fila, col, mapa):
-        """
-        Verifica si el jugador puede moverse a una casilla
-        
-        Args:
-            fila: Fila destino
-            col: Columna destino
-            mapa: Matriz del mapa
-            
-        Returns:
-            bool: True si puede moverse, False si no
-        """
         # Verificar límites del mapa
         if fila < 0 or fila >= len(mapa) or col < 0 or col >= len(mapa[0]):
             return False
         
         tipo_casilla = mapa[fila][col]
-        
-        # ROLES INVERTIDOS CORRECTAMENTE:
-        # Modo Escape: Jugador es RUNNER (Camino + Túneles + Salida)
-        # Modo Hunter: Jugador es HUNTER (Camino + Lianas)
         
         if self.modo == "escape":
             # Jugador RUNNER: puede pasar por P, T y E
@@ -184,18 +152,10 @@ class Player:
         self.frame_actual = self.secuencia_animacion[self.indice_secuencia]
     
     def dibujar(self, ventana, margen_x, margen_y):
-        """
-        Dibuja el jugador en pantalla
-        
-        Args:
-            ventana: Superficie de pygame donde dibujar
-            margen_x: Margen izquierdo del mapa
-            margen_y: Margen superior del mapa
-        """
         x = margen_x + (self.col * self.tile_size)
         y = margen_y + (self.fila * self.tile_size)
         
-        # Obtener sprite actual (frame_actual - 1 porque los índices empiezan en 0)
+        # Obtener sprite actual
         sprite = self.sprites[self.direccion][self.frame_actual - 1]
         ventana.blit(sprite, (x, y))
     

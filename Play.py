@@ -40,6 +40,7 @@ class PlayScreen:
         self.ventana = ventana
         self.reloj = pygame.time.Clock()
         self.corriendo = True
+        self.volver_al_menu = False
 
         self.fuente_titulo = pygame.font.Font(None, 72)
         self.fuente_boton = pygame.font.Font(None, 40)
@@ -79,11 +80,17 @@ class PlayScreen:
     def manejar_click(self, pos_mouse):
         if self.btn_escape.es_clickeado(pos_mouse):
             pantalla_nombre = PlayerNameScreen(self.ventana, "ESCAPE")
-            pantalla_nombre.ejecutar()
+            volver = pantalla_nombre.ejecutar()
+            if volver:
+                self.volver_al_menu = True
+                self.corriendo = False
 
         elif self.btn_cazador.es_clickeado(pos_mouse):
             pantalla_nombre = PlayerNameScreen(self.ventana, "CAZADOR")
-            pantalla_nombre.ejecutar()
+            volver = pantalla_nombre.ejecutar()
+            if volver:
+                self.volver_al_menu = True
+                self.corriendo = False
 
         elif self.btn_volver.es_clickeado(pos_mouse):
             self.corriendo = False
@@ -97,5 +104,9 @@ class PlayScreen:
                 elif evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
                     self.manejar_click(evento.pos)
 
-            self.dibujar()
+            if not self.volver_al_menu:
+                 self.dibujar()
+                 
             self.reloj.tick(FPS)
+        
+        return self.volver_al_menu
