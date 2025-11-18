@@ -11,19 +11,13 @@ class Countdown:
         
         # Fuente dorada para los números
         self.fuente_grande = pygame.font.Font(None, 200)
-        self.color_dorado = (255, 215, 0)  # Dorado
+        self.color_dorado = (255, 215, 0)
         
         # Secuencia de cuenta regresiva
         self.secuencia = ["3", "2", "1", "GO!"]
-        self.duracion_por_numero = 1.0  # 1 segundo por número
+        self.duracion_por_numero = 1.0
         
     def dibujar_numero(self, texto):
-        """
-        Dibuja un número/texto centrado en pantalla con efecto dorado
-        
-        Args:
-            texto: Texto a mostrar ("3", "2", "1", "GO!")
-        """
         # Crear texto con sombra para efecto 3D
         texto_sombra = self.fuente_grande.render(texto, True, (100, 80, 0))
         texto_principal = self.fuente_grande.render(texto, True, self.color_dorado)
@@ -39,21 +33,11 @@ class Countdown:
         self.ventana.blit(texto_principal, rect_texto)
     
     def ejecutar(self, callback_dibujar_fondo):
-        """
-        Ejecuta la cuenta regresiva completa
-        
-        Args:
-            callback_dibujar_fondo: Función que dibuja el fondo del juego
-                                   (mapa, enemigos, jugador, HUD, etc.)
-        
-        Returns:
-            bool: True si completó la cuenta, False si fue interrumpida
-        """
         for numero in self.secuencia:
             tiempo_inicio = time.time()
             
             while time.time() - tiempo_inicio < self.duracion_por_numero:
-                # Verificar eventos (permitir salir)
+                # Verificar eventos
                 for evento in pygame.event.get():
                     if evento.type == pygame.QUIT:
                         return False
@@ -67,6 +51,6 @@ class Countdown:
                 self.dibujar_numero(numero)
                 
                 pygame.display.flip()
-                pygame.time.Clock().tick(60)  # 60 FPS durante la cuenta
+                pygame.time.Clock().tick(60)
         
         return True
