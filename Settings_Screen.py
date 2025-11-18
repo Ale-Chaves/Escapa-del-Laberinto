@@ -55,7 +55,7 @@ class Slider:
         self.valor = valor_inicial
         self.handle_x = x + (valor_inicial / max_val) * ancho
         self.arrastrando = False
-        self.suelto = False  # <- Nuevo atributo para detectar cuando se suelta
+        self.suelto = False
 
     def dibujar(self, ventana):
         pygame.draw.rect(ventana, GRIS, (self.x, self.y, self.ancho, self.altura))
@@ -67,7 +67,7 @@ class Slider:
                 self.arrastrando = True
         elif evento.type == pygame.MOUSEBUTTONUP:
             if self.arrastrando:
-                self.suelto = True  # <- Se soltó el slider
+                self.suelto = True
             self.arrastrando = False
         elif evento.type == pygame.MOUSEMOTION and self.arrastrando:
             self.handle_x = max(self.x, min(evento.pos[0], self.x + self.ancho))
