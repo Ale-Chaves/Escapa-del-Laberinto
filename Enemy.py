@@ -4,18 +4,9 @@ from collections import deque
 
 class Enemy:
     def __init__(self, fila, col, tile_size, modo="escape"):
-        """
-        Inicializa un enemigo
-        
-        Args:
-            fila: Fila inicial en el mapa
-            col: Columna inicial en el mapa
-            tile_size: Tamaño de cada casilla (25px)
-            modo: "escape" o "hunter" para determinar comportamiento
-        """
         self.fila = fila
         self.col = col
-        self.fila_spawn = fila  # Guardar posición de spawn
+        self.fila_spawn = fila
         self.col_spawn = col
         self.tile_size = tile_size
         self.modo = modo
@@ -23,10 +14,10 @@ class Enemy:
         # Determinar rol según modo (opuesto al jugador)
         self.rol = "Hunter" if modo == "escape" else "Runner"
         
-        # Velocidad (más lenta que el jugador)
+        # Velocidad
         self.velocidad = 1
         self.contador_movimiento = 0
-        self.frames_por_movimiento = 8  # Esperar 8 frames antes de moverse
+        self.frames_por_movimiento = 8
         
         # Dirección actual
         self.direccion = "Down"
@@ -48,9 +39,9 @@ class Enemy:
         self.camino = []
         self.objetivo_anterior = None
         
-        # NUEVO: Para modo Hunter
-        self.salida_pos = None  # Se establecerá desde Hunter_Mode
-        self.distancia_huida = 5  # Casillas mínimas para mantener del jugador
+        # Para modo Hunter
+        self.salida_pos = None
+        self.distancia_huida = 5
         
     def cargar_sprites(self):
         """Carga todos los sprites del enemigo según su rol"""
@@ -82,30 +73,16 @@ class Enemy:
         return superficie
     
     def set_salida(self, salida_pos):
-        """
-        Establece la posición de la salida (para modo Hunter)
-        
-        Args:
-            salida_pos: Tupla (fila, col) de la salida
-        """
         self.salida_pos = salida_pos
     
     def actualizar(self, jugador_pos, mapa, tiempo_actual):
-        """
-        Actualiza el estado del enemigo
-        
-        Args:
-            jugador_pos: Tupla (fila, col) de la posición del jugador
-            mapa: Matriz del mapa
-            tiempo_actual: Tiempo actual en segundos (pygame.time.get_ticks() / 1000)
-        """
         if not self.vivo:
             return
         
         # Incrementar contador de movimiento
         self.contador_movimiento += 1
         
-        # Mover solo cada ciertos frames (para que sea más lento)
+        # Mover solo cada ciertos frames
         if self.contador_movimiento >= self.frames_por_movimiento:
             self.contador_movimiento = 0
             
@@ -118,13 +95,6 @@ class Enemy:
                 self.huir_hacia_salida(jugador_pos, mapa)
     
     def mover_hacia_jugador(self, jugador_pos, mapa):
-        """
-        Mueve al enemigo hacia el jugador (MODO ESCAPE)
-        
-        Args:
-            jugador_pos: Tupla (fila, col) del jugador
-            mapa: Matriz del mapa
-        """
         # Si el objetivo cambió, recalcular camino
         if jugador_pos != self.objetivo_anterior:
             self.camino = self.encontrar_camino_hacia_objetivo(jugador_pos, mapa)
@@ -135,15 +105,8 @@ class Enemy:
             self.seguir_camino(mapa)
     
     def huir_hacia_salida(self, jugador_pos, mapa):
-        """
-        Mueve al enemigo hacia la salida, evitando al jugador (MODO HUNTER)
-        
-        Args:
-            jugador_pos: Tupla (fila, col) del jugador
-            mapa: Matriz del mapa
-        """
         if not self.salida_pos:
-            return  # No hacer nada si no hay salida definida
+            return
         
         # Calcular distancia al jugador
         distancia_jugador = abs(self.fila - jugador_pos[0]) + abs(self.col - jugador_pos[1])
@@ -163,13 +126,7 @@ class Enemy:
             self.seguir_camino(mapa)
     
     def seguir_camino(self, mapa):
-        """
-        Sigue el camino calculado
-        
-        Args:
-            mapa: Matriz del mapa
-        """
-        siguiente = self.camino[1]  # [0] es la posición actual
+        siguiente = self.camino[1]
         nueva_fila, nueva_col = siguiente
         
         # Determinar dirección del movimiento
@@ -190,22 +147,11 @@ class Enemy:
                 
             self.fila = nueva_fila
             self.col = nueva_col
-            self.camino.pop(0)  # Eliminar posición actual del camino
+            self.camino.pop(0)
     
     def encontrar_camino_hacia_objetivo(self, objetivo, mapa):
-        """
-        Encuentra el camino más corto hacia un objetivo usando BFS
-        
-        Args:
-            objetivo: Tupla (fila, col) del objetivo
-            mapa: Matriz del mapa
-            
-        Returns:
-            Lista de tuplas (fila, col) representando el camino
-        """
         inicio = (self.fila, self.col)
         
-        # BFS
         cola = deque([inicio])
         visitados = {inicio}
         padres = {inicio: None}
@@ -237,16 +183,6 @@ class Enemy:
         return [inicio]
     
     def encontrar_camino_huyendo(self, jugador_pos, mapa):
-        """
-        Encuentra un camino alejándose del jugador (MODO HUNTER)
-        
-        Args:
-            jugador_pos: Tupla (fila, col) del jugador
-            mapa: Matriz del mapa
-            
-        Returns:
-            Lista con el mejor movimiento para huir
-        """
         inicio = (self.fila, self.col)
         mejor_movimiento = inicio
         max_distancia = 0
@@ -257,7 +193,6 @@ class Enemy:
             nueva_col = self.col + dc
             
             if self.puede_moverse(nueva_fila, nueva_col, mapa):
-                # Calcular distancia Manhattan desde esta posición al jugador
                 distancia = abs(nueva_fila - jugador_pos[0]) + abs(nueva_col - jugador_pos[1])
                 
                 # Elegir la dirección que más nos aleje del jugador
@@ -268,38 +203,15 @@ class Enemy:
         return [inicio, mejor_movimiento]
     
     def llego_a_salida(self):
-        """
-        Verifica si el enemigo llegó a la salida (para modo Hunter)
-        
-        Returns:
-            bool: True si está en la salida
-        """
         if self.modo == "hunter" and self.salida_pos:
             return (self.fila, self.col) == self.salida_pos
         return False
     
     def puede_moverse(self, fila, col, mapa):
-        """
-        Verifica si el enemigo puede moverse a una casilla
-        
-        Args:
-            fila: Fila destino
-            col: Columna destino
-            mapa: Matriz del mapa
-            
-        Returns:
-            bool: True si puede moverse, False si no
-        """
-        # Verificar límites
         if fila < 0 or fila >= len(mapa) or col < 0 or col >= len(mapa[0]):
             return False
         
         tipo_casilla = mapa[fila][col]
-        
-        # ROLES INVERTIDOS:
-        # Modo Escape: Enemigos son HUNTERS (Camino + Lianas)
-        # Modo Hunter: Enemigos son RUNNERS (Camino + Túneles + Salida)
-        
         if self.modo == "escape":
             # Enemigos son HUNTERS: pueden pasar por P y L
             return tipo_casilla in ["P", "L"]
@@ -315,38 +227,13 @@ class Enemy:
         self.frame_actual = self.secuencia_animacion[self.indice_secuencia]
     
     def colisiona_con_jugador(self, jugador_pos):
-        """
-        Verifica si el enemigo colisiona con el jugador
-        
-        Args:
-            jugador_pos: Tupla (fila, col) del jugador
-            
-        Returns:
-            bool: True si hay colisión
-        """
         return self.vivo and (self.fila, self.col) == jugador_pos
     
     def morir(self, tiempo_actual):
-        """
-        Mata al enemigo (por trampa en modo Escape)
-        
-        Args:
-            tiempo_actual: Tiempo actual en segundos
-        """
         self.vivo = False
         self.tiempo_muerte = tiempo_actual
-        print(f"Enemigo en ({self.fila}, {self.col}) eliminado por trampa")
     
     def puede_reaparecer(self, tiempo_actual):
-        """
-        Verifica si el enemigo puede reaparecer (solo para modo Escape con trampas)
-        
-        Args:
-            tiempo_actual: Tiempo actual en segundos
-            
-        Returns:
-            bool: True si ya pasaron 10 segundos desde su muerte
-        """
         if self.vivo:
             return False
         
@@ -356,32 +243,16 @@ class Enemy:
         return (tiempo_actual - self.tiempo_muerte) >= self.tiempo_reaparicion
     
     def reaparecer(self, nueva_fila, nueva_col):
-        """
-        Reaparece al enemigo en una nueva posición
-        
-        Args:
-            nueva_fila: Nueva fila donde aparecerá
-            nueva_col: Nueva columna donde aparecerá
-        """
         self.vivo = True
         self.fila = nueva_fila
         self.col = nueva_col
         self.tiempo_muerte = None
         self.camino = []
         self.objetivo_anterior = None
-        print(f"Enemigo reaparecido en ({nueva_fila}, {nueva_col})")
     
     def dibujar(self, ventana, margen_x, margen_y):
-        """
-        Dibuja el enemigo en pantalla
-        
-        Args:
-            ventana: Superficie de pygame donde dibujar
-            margen_x: Margen izquierdo del mapa
-            margen_y: Margen superior del mapa
-        """
         if not self.vivo:
-            return  # No dibujar si está muerto
+            return
         
         x = margen_x + (self.col * self.tile_size)
         y = margen_y + (self.fila * self.tile_size)
