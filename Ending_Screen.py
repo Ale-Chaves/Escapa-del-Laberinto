@@ -1,7 +1,7 @@
 import pygame
 import json
 import os
-import Music_Manager  # NUEVO
+import Music_Manager
 
 ANCHO_VENTANA = 800
 ALTO_VENTANA = 600
@@ -23,8 +23,6 @@ class EndingScreen:
 
         self.scores = self.cargar_scores()
         self.actualizar_scores()
-        
-        # NUEVO: Reproducir música de ending al entrar (solo una vez, no loop)
         try:
             pygame.mixer.music.load("ASSETS/OST/Ending.mp3")
             
@@ -35,7 +33,7 @@ class EndingScreen:
                     if settings.get("musica_activada", True):
                         volumen = settings.get("volumen_musica", 5) / 10
                         pygame.mixer.music.set_volume(volumen)
-                        pygame.mixer.music.play(0)  # 0 = reproducir solo una vez (no loop)
+                        pygame.mixer.music.play(0)
         except Exception as e:
             print(f"Error al cargar música de ending: {e}")
 
@@ -85,8 +83,7 @@ class EndingScreen:
 
             self.dibujar()
             pygame.display.flip()
-        
-        # NUEVO: Detener música al salir
+
         Music_Manager.detener_musica()
         
         return self.volver_al_menu
