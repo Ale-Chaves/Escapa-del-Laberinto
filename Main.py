@@ -23,7 +23,6 @@ VERDE_CLARO = (144, 238, 144)
 VERDE_OSCURO = (0, 100, 0)
 ROJO_SANGRE = (139, 0, 0)
 
-
 class Boton:
     def __init__(self, x, y, ancho, alto, texto, fuente):
         self.rect = pygame.Rect(x, y, ancho, alto)
@@ -106,7 +105,7 @@ class MainScreen:
         self.crear_botones()
 
     def cargar_musica(self):
-        reproducir_musica("ASSETS/OST/Main_Theme.mp3")  # Reproducir música principal del menú
+        reproducir_musica("ASSETS/OST/Main_Theme.mp3")
 
     def crear_botones(self):
         ancho_boton = 250
@@ -149,10 +148,8 @@ class MainScreen:
 
     def manejar_click(self, pos_mouse):
         if self.btn_jugar.es_clickeado(pos_mouse):
-            # Al entrar a PlayScreen, detener música actual y reproducir Mode_Selection solo si no estaba ya en Play
             pantalla_play = PlayScreen(self.ventana)
             pantalla_play.ejecutar()
-            # Al regresar de PlayScreen, detener Mode_Selection y volver a música principal
             detener_musica()
             reproducir_musica("ASSETS/OST/Main_Theme.mp3")
 
