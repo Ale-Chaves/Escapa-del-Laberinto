@@ -8,8 +8,8 @@ from Ending_Screen import EndingScreen
 from Player import Player
 from Enemy import Enemy
 from Trap import TrapManager
-import Music_Manager  # NUEVO
-from Countdown import Countdown  # NUEVO
+import Music_Manager
+from Countdown import Countdown
 
 
 '''Variables Globales'''
@@ -18,10 +18,10 @@ ANCHO_VENTANA = 800
 ALTO_VENTANA = 600
 FPS = 10
 
-# MAPA - Ajustado para ser más pequeño y centrado
-TILE = 25  # Aumentado para mejor visibilidad
-MAP_COLS = 24  # Reducido de 40 a 24
-MAP_ROWS = 18  # Reducido de 30 a 18
+# MAPA
+TILE = 25
+MAP_COLS = 24
+MAP_ROWS = 18
 
 # Margen para centrar el mapa
 MARGEN_X = (ANCHO_VENTANA - (MAP_COLS * TILE)) // 2
@@ -31,13 +31,11 @@ MARGEN_Y = (ALTO_VENTANA - (MAP_ROWS * TILE)) // 2
 class EscapeMode:
     def __init__(self, ventana, nombre_jugador, num_enemigos=2, velocidad_enemigos=1.0):
 
-        # ESTO ES DEL HUD
+        # HUD
 
-        self.timer = TimerBar(duracion=120, x=200, y=20)  # 2 minutos
+        self.timer = TimerBar(duracion=120, x=200, y=20)
         self.points_box = PointsBox(x=20, y=550, width=200, height=40, initial_points=0)
         self.energy_bar = EnergyBar(max_energy=100, x=550, y=550)
-
-        print("Entrando a Escape Mode...")
 
         self.ventana = ventana
         self.nombre_jugador = nombre_jugador
@@ -51,7 +49,7 @@ class EscapeMode:
         # Cargar sprites
         self.cargar_sprites()
         
-        # Jugador (se creará después de generar el mapa)
+        # Jugador
         self.jugador = None
         
         # Enemigos - Configuración de dificultad
@@ -59,14 +57,12 @@ class EscapeMode:
         self.num_enemigos = num_enemigos
         self.velocidad_enemigos = velocidad_enemigos
         
-        # NUEVO: Sistema de trampas
+        # Sistema de trampas
         self.trap_manager = TrapManager(max_trampas=3, cooldown=5.0)
-        self.puntos_por_enemigo_trampa = 50  # Bonus por eliminar enemigo con trampa
+        self.puntos_por_enemigo_trampa = 50
         
-        # NUEVO: Cuenta regresiva
+        # Cuenta regresiva
         self.countdown = Countdown(ventana, ANCHO_VENTANA, ALTO_VENTANA)
-
-    ###############################
 
     def cargar_gif(self, ruta):
         frames = []
@@ -104,8 +100,6 @@ class EscapeMode:
             
             door = pygame.image.load("ASSETS/SPRITES/Door.png")
             self.sprites["E"] = pygame.transform.scale(door, (TILE, TILE))
-            
-            print("Sprites cargados correctamente")
         except Exception as e:
             print(f"Error al cargar sprites: {e}")
             # Crear sprites de respaldo con colores
@@ -132,10 +126,10 @@ class EscapeMode:
         # Dibujar mapa
         self.dibujar_mapa()
         
-        # NUEVO: Dibujar trampas (antes de enemigos para que estén debajo)
+        # Dibujar trampas
         self.trap_manager.dibujar(self.ventana, MARGEN_X, MARGEN_Y)
         
-        # Dibujar enemigos (antes del jugador para que el jugador esté encima)
+        # Dibujar enemigos
         for enemigo in self.enemigos:
             enemigo.dibujar(self.ventana, MARGEN_X, MARGEN_Y)
         
@@ -157,7 +151,7 @@ class EscapeMode:
                 sys.exit()
             elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
                 self.corriendo = False
-            # NUEVO: Colocar trampa con ESPACIO
+            # Colocar trampa con ESPACIO
             elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
                 # Intentar colocar trampa en la posición actual del jugador
                 if self.jugador:
@@ -172,7 +166,7 @@ class EscapeMode:
                             TILE, 
                             tiempo_actual
                         ):
-                            print(f"¡Trampa colocada en {jugador_pos}!")
+                            print("Trampa colocada")
                         else:
                             cooldown_restante = self.trap_manager.get_cooldown_restante(tiempo_actual)
                             trampas_activas = self.trap_manager.get_trampas_activas()
@@ -182,15 +176,7 @@ class EscapeMode:
                             elif trampas_activas >= 3:
                                 print("Ya tienes 3 trampas activas")
 
-
-
-########################
-#WHILE DE EJECUTAR
-
-
-
     def ejecutar(self):
-        print("EscapeMode iniciando...")
         self.mapa = self.generar_mapa()
         
         # Crear jugador después de generar el mapa
@@ -199,21 +185,21 @@ class EscapeMode:
         # Crear enemigos en posiciones aleatorias
         self.crear_enemigos()
         
-        # NUEVO: Mostrar cuenta regresiva antes de empezar
+        # Mostrar cuenta regresiva antes de empezar
         if not self.countdown.ejecutar(self.dibujar):
             # Si se canceló la cuenta regresiva, volver al menú
             return False
         
-        # NUEVO: Iniciar el timer DESPUÉS de la cuenta regresiva
+        # Iniciar el timer DESPUÉS de la cuenta regresiva
         self.timer.start()
         
-        # NUEVO: Iniciar música del modo
+        # Iniciar música del modo
         Music_Manager.reproducir_musica("ASSETS/OST/Escape_Mode.mp3")
 
         while self.corriendo:
             # Verificar si el timer terminó
             if self.timer.is_finished():
-                # NUEVO: Detener música del modo
+                # Detener música del modo
                 Music_Manager.detener_musica()
                 
                 end = EndingScreen(self.ventana, self.nombre_jugador, self.points_box.points, "escape")
@@ -228,7 +214,7 @@ class EscapeMode:
                 puntos_bonus = int(tiempo_restante * 10)  # 10 puntos por segundo
                 self.points_box.add_points(puntos_bonus)
                 
-                # NUEVO: Detener música del modo
+                # Detener música
                 Music_Manager.detener_musica()
                 
                 # Mostrar pantalla de victoria
@@ -241,13 +227,10 @@ class EscapeMode:
             jugador_pos = self.jugador.get_posicion()
             for enemigo in self.enemigos:
                 if enemigo.colisiona_con_jugador(jugador_pos):
-                    # Game Over - El jugador fue atrapado
-                    print("¡Te atraparon!")
-                    
-                    # NUEVO: Reproducir sonido de eliminación
+                    # Game Over - El jugador fue atrapado                    
+                    # Reproducir sonido de eliminación
                     Music_Manager.reproducir_efecto("Eliminated")
-                    
-                    # NUEVO: Detener música del modo
+                    # Detener música del modo
                     Music_Manager.detener_musica()
                     
                     end = EndingScreen(self.ventana, self.nombre_jugador, self.points_box.points, "escape")
@@ -268,24 +251,23 @@ class EscapeMode:
             for enemigo in self.enemigos:
                 enemigo.actualizar(jugador_pos, self.mapa, tiempo_actual)
             
-            # NUEVO: Actualizar trampas
+            # Actualizar trampas
             self.trap_manager.actualizar()
             
-            # NUEVO: Verificar colisiones trampa-enemigo
+            # Verificar colisiones trampa-enemigo
             enemigos_eliminados = self.trap_manager.verificar_colisiones(
                 self.enemigos, 
                 tiempo_actual
             )
             
-            # NUEVO: Dar puntos por enemigos eliminados
+            # Dar puntos por enemigos eliminados
             if enemigos_eliminados > 0:
                 puntos_ganados = enemigos_eliminados * self.puntos_por_enemigo_trampa
                 self.points_box.add_points(puntos_ganados)
-                # NUEVO: Reproducir sonido de eliminación
+                # Reproducir sonido de eliminación
                 Music_Manager.reproducir_efecto("Eliminated")
-                print(f"¡{enemigos_eliminados} enemigo(s) eliminado(s)! +{puntos_ganados} puntos")
             
-            # NUEVO: Reaparición de enemigos muertos
+            # Reaparición de enemigos muertos
             for enemigo in self.enemigos:
                 if not enemigo.vivo and enemigo.puede_reaparecer(tiempo_actual):
                     # Buscar posición aleatoria válida para reaparecer
@@ -311,11 +293,9 @@ class EscapeMode:
             self.dibujar()
             self.reloj.tick(FPS)
         
-        # Detener música al salir (por si acaso)
+        # Detener música al salir
         Music_Manager.detener_musica()
         return False
-
-    ##############GENERACIÓN DEL MAPA:
     
     def crear_enemigos(self):
         """Crea los enemigos en posiciones aleatorias del mapa"""
@@ -332,40 +312,30 @@ class EscapeMode:
             # Posición aleatoria
             fila = random.randint(2, MAP_ROWS - 3)
             col = random.randint(2, MAP_COLS - 3)
-            
-            # Verificar que:
-            # 1. Sea una casilla de camino
-            # 2. No esté muy cerca del jugador (al menos 5 casillas)
-            # 3. No esté en la salida
+            # Verificar que sea camino y esté lejos del inicio y salida
             if (self.mapa[fila][col] == "P" and
                 abs(fila - self.inicio[0]) + abs(col - self.inicio[1]) >= 5 and
                 (fila, col) != self.salida):
                 
                 enemigo = Enemy(fila, col, TILE, modo="escape")
-                enemigo.frames_por_movimiento = frames_por_movimiento  # Aplicar velocidad
+                enemigo.frames_por_movimiento = frames_por_movimiento
                 self.enemigos.append(enemigo)
-        
-        print(f"Enemigos creados: {len(self.enemigos)} con velocidad {self.velocidad_enemigos}x")
 
     def generar_mapa(self):
         """Genera un laberinto aleatorio con bordes de muros"""
         
         self.MAP_COLS = MAP_COLS
         self.MAP_ROWS = MAP_ROWS
-
-        # PASO 1: Inicializar todo como caminos
         mapa = [["P" for _ in range(MAP_COLS)] for _ in range(MAP_ROWS)]
 
-        # PASO 2: Crear bordes de muros (marco exterior)
         for col in range(MAP_COLS):
-            mapa[0][col] = "W"  # Borde superior
-            mapa[MAP_ROWS - 1][col] = "W"  # Borde inferior
+            mapa[0][col] = "W"
+            mapa[MAP_ROWS - 1][col] = "W"
         
         for fila in range(MAP_ROWS):
-            mapa[fila][0] = "W"  # Borde izquierdo
-            mapa[fila][MAP_COLS - 1] = "W"  # Borde derecho
+            mapa[fila][0] = "W"
+            mapa[fila][MAP_COLS - 1] = "W"
 
-        # PASO 3: Definir inicio y salida (dentro de los bordes)
         inicio_fila = random.randint(2, MAP_ROWS - 3)
         inicio_col = 2
         
@@ -376,19 +346,19 @@ class EscapeMode:
         self.inicio = (inicio_fila, inicio_col)
         self.salida = (salida_fila, salida_col)
 
-        # PASO 4: Crear camino garantizado a la salida
+        # Crear camino garantizado a la salida
         camino_garantizado = self.crear_camino_garantizado(inicio_fila, inicio_col, 
                                                             salida_fila, salida_col)
 
-        # PASO 5: Agregar muros en patrón equilibrado
+        # Agregar muros en patrón equilibrado
         self.agregar_muros_equilibrados(mapa, camino_garantizado)
 
-        # PASO 6: Agregar lianas y túneles
+        # Agregar lianas y túneles
         self.agregar_elementos_tacticos(mapa, camino_garantizado)
 
-        # PASO 7: Asegurar que inicio y salida estén despejados
+        # Asegurar que inicio y salida estén despejados
         mapa[inicio_fila][inicio_col] = "P"
-        mapa[salida_fila][salida_col] = "E"  # E = Exit (salida)
+        mapa[salida_fila][salida_col] = "E"
 
         return mapa
 
@@ -418,15 +388,10 @@ class EscapeMode:
         
         # Calcular celdas interiores (sin contar bordes)
         celdas_interiores = (MAP_ROWS - 2) * (MAP_COLS - 2)
-        
-        # Queremos aproximadamente 30-40% del interior como muros
-        # (para balance entre caminos y obstáculos)
         num_muros_objetivo = int(celdas_interiores * random.uniform(0.30, 0.40))
         
         muros_colocados = 0
-        
-        # Patrón de rejilla estilo Bomberman clásico
-        # Colocar muros en posiciones estratégicas
+
         for fila in range(2, MAP_ROWS - 2):
             for col in range(2, MAP_COLS - 2):
                 
@@ -463,16 +428,14 @@ class EscapeMode:
     def agregar_elementos_tacticos(self, mapa, camino_garantizado):
         """Agrega lianas y túneles distribuidos estratégicamente por el mapa"""
         
-        # Calcular basado en celdas interiores de CAMINO disponibles
+        # Calcular basado en celdas interiores de camino disponibles
         celdas_camino = 0
         for fila in range(1, MAP_ROWS - 1):
             for col in range(1, MAP_COLS - 1):
                 if mapa[fila][col] == "P":
                     celdas_camino += 1
-        
-        # 10-15% de los caminos serán lianas
+
         num_lianas = int(celdas_camino * random.uniform(0.10, 0.15))
-        # 10-15% de los caminos serán túneles
         num_tuneles = int(celdas_camino * random.uniform(0.10, 0.15))
         
         # Agregar lianas
