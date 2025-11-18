@@ -1,6 +1,7 @@
 import pygame
 import sys
 import os
+import json
 
 # Constantes
 ANCHO_VENTANA = 800
@@ -13,8 +14,6 @@ BLANCO = (255, 255, 255)
 VERDE_CLARO = (144, 238, 144)
 NARANJA = (255, 165, 0)
 
-
-# ---------------- Clase Botón ---------------- #
 class Boton:
     def __init__(self, x, y, ancho, alto, texto, fuente):
         self.rect = pygame.Rect(x, y, ancho, alto)
@@ -36,8 +35,6 @@ class Boton:
     def es_clickeado(self, pos_mouse):
         return self.rect.collidepoint(pos_mouse)
 
-
-# ---------------- Pantalla de selección de modos ---------------- #
 class HighScoresScreen:
     def __init__(self, ventana):
         self.ventana = ventana
@@ -111,8 +108,6 @@ class HighScoresScreen:
             self.dibujar()
             self.reloj.tick(FPS)
 
-
-# ---------------- Pantalla de TOP 5 ---------------- #
 class TopScoresScreen:
     def __init__(self, ventana, modo):
         self.ventana = ventana
@@ -124,23 +119,24 @@ class TopScoresScreen:
         self.fuente_texto = pygame.font.Font(None, 40)
         self.fuente_boton = pygame.font.Font(None, 36)
         
-        self.archivo = f"high_scores_{self.modo}.txt"
-        self.crear_archivo_si_no_existe()
+        # Usar el mismo archivo JSON que EndingScreen
+        self.archivo = f"scores_{self.modo}.json"
         
         self.crear_botones()
         self.puntajes = self.cargar_puntajes()
         
-    def crear_archivo_si_no_existe(self):
-        """Crea el archivo de puntajes si no existe"""
-        if not os.path.exists(self.archivo):
-            with open(self.archivo, "w") as f:
-                pass  # archivo vacío
-            
     def cargar_puntajes(self):
-        """Carga los puntajes desde el archivo"""
-        with open(self.archivo, "r") as f:
-            lineas = [line.strip() for line in f.readlines() if line.strip()]
-        return lineas  # lista de strings (por ahora)
+        """Carga los puntajes desde el archivo JSON"""
+        if not os.path.exists(self.archivo):
+            return []
+        
+        try:
+            with open(self.archivo, "r") as f:
+                data = json.load(f)
+                return data
+        except Exception as e:
+            print(f"Error al cargar puntajes: {e}")
+            return []
         
     def crear_botones(self):
         ancho_boton = 200
@@ -152,18 +148,26 @@ class TopScoresScreen:
     def dibujar(self):
         self.ventana.fill(NEGRO)
         
-        texto_titulo = self.fuente_titulo.render("TOP 5", True, BLANCO)
+        # Título con nombre del modo
+        modo_texto = "ESCAPA" if self.modo == "escape" else "CAZADOR"
+        texto_titulo = self.fuente_titulo.render(f"TOP 5 - {modo_texto}", True, BLANCO)
         rect_titulo = texto_titulo.get_rect(center=(ANCHO_VENTANA // 2, 80))
         self.ventana.blit(texto_titulo, rect_titulo)
         
         if not self.puntajes:
-            texto_vacio = self.fuente_texto.render("No hay puntajes para mostrar", True, NARANJA)
+            texto_vacio = self.fuente_texto.render("No hay puntajes registrados", True, NARANJA)
             rect_vacio = texto_vacio.get_rect(center=(ANCHO_VENTANA // 2, ALTO_VENTANA // 2))
             self.ventana.blit(texto_vacio, rect_vacio)
         else:
-            # Mostrar lista de puntajes
-            for i, score in enumerate(self.puntajes[:5]):
-                texto_puntaje = self.fuente_texto.render(f"{i+1}. {score}", True, BLANCO)
+            # Mostrar TOP 5 con formato: "1. Nombre - Puntaje"
+            for i, score_data in enumerate(self.puntajes[:5]):
+                nombre = score_data.get("name", "Desconocido")
+                puntaje = score_data.get("score", 0)
+                texto_puntaje = self.fuente_texto.render(
+                    f"{i+1}. {nombre} - {puntaje}", 
+                    True, 
+                    BLANCO
+                )
                 rect_puntaje = texto_puntaje.get_rect(center=(ANCHO_VENTANA // 2, 180 + i * 60))
                 self.ventana.blit(texto_puntaje, rect_puntaje)
         
