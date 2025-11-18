@@ -8,20 +8,31 @@ class TimerBar1:
         self.y = y
         self.width = width
         self.height = height
-        self.inicio = time.time()
+        self.inicio = None
+        self.iniciado = False
 
         self.VERDE = (0, 255, 0)
         self.AMARILLO = (255, 255, 0)
         self.ROJO = (255, 0, 0)
         self.BLANCO = (255, 255, 255)
 
+    def start(self):
+        if not self.iniciado:
+            self.inicio = time.time()
+            self.iniciado = True
+
     def reset(self):
         self.inicio = time.time()
+        self.iniciado = True
 
     def get_remaining_time(self):
+        if not self.iniciado or self.inicio is None:
+            return self.duracion
         return max(self.duracion - (time.time() - self.inicio), 0)
 
     def is_finished(self):
+        if not self.iniciado:
+            return False
         return self.get_remaining_time() <= 0
 
     def draw(self, pantalla):
@@ -66,9 +77,6 @@ class PointsBox1:
         text_rect = text.get_rect(center=(self.x + self.width//2, self.y + self.height//2))
 
         pantalla.blit(text, text_rect)
-
-
-############### ESTA ES LA BARRA DE ENERGIA #######################
 
 class EnergyBar1:
     def __init__(self, max_energy, x, y, width=200, height=15):
